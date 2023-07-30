@@ -7,6 +7,7 @@ import java.util.StringTokenizer;
 
 public class CommunicationModule {
     private static DatagramSocket socket;
+    private static DatagramSocket socketOutgoing;
 
     public static void createSocket(Node systemNode) {
         try {
@@ -16,7 +17,20 @@ public class CommunicationModule {
         }
     }
 
-    public static DatagramPacket receiveCommand() {
+    public static void createSocketOutgoing(Node systemNode) {
+        try {
+            socketOutgoing = new DatagramSocket(systemNode.getOutgoingPort());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    /**
+     * Watch incoming file search traffic
+     * @return DatagramPacket
+     */
+    public static DatagramPacket receiveIncomingCommand() {
         try {
             byte[] buffer = new byte[65536];
             DatagramPacket incoming = new DatagramPacket(buffer, buffer.length);
@@ -28,12 +42,34 @@ public class CommunicationModule {
         return null;
     }
 
+    /**
+     * Wait for get reply for send command
+     * @return DatagramPacket
+     */
+    public static DatagramPacket waitForReply() {
+        try {
+            byte[] buffer = new byte[65536];
+            DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
+            socketOutgoing.receive(reply);
+            return reply;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Send command to other nodes
+     * @param command command that need to send
+     * @param address ip address of the node
+     * @param port pot of the node
+     */
     public static void sendCommand(String command, InetAddress address, int port) {
         try {
             System.out.println(command);
             // send response to client
             DatagramPacket dpReply = new DatagramPacket(command.getBytes() , command.getBytes().length , address, port);
-            socket.send(dpReply);
+            socketOutgoing.send(dpReply);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -50,6 +86,14 @@ public class CommunicationModule {
     public static void setSocketTimeout(int timeout) {
         try {
             socket.setSoTimeout(timeout);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void setOutgoingSocketTimeout(int timeout) {
+        try {
+            socketOutgoing.setSoTimeout(timeout);
         } catch (Exception e) {
             e.printStackTrace();
         }

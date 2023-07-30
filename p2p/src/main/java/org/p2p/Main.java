@@ -20,6 +20,7 @@ public class Main {
 
             // Create socket
             CommunicationModule.createSocket(systemNode);
+            CommunicationModule.createSocketOutgoing(systemNode);
 
             // lets register our node in boostrap server
             String response = registerNodeInBS(systemNode);
@@ -42,12 +43,18 @@ public class Main {
             Thread th1 = new Thread(new ClientListener(systemNode), "Client Listener");
             th1.start();
 
-            // wait for user input and if user request file start search
-            Scanner scanner = new Scanner(System.in);
-            System.out.print("Enter File Name To Search: ");
-            String  fileName = scanner.nextLine();
-
             System.out.println(systemNode.getNodeJsonObject());
+
+            while (true) {
+                // wait for user input and if user request file start search
+                Scanner scanner = new Scanner(System.in);
+                System.out.print("Enter File Name To Search: ");
+                String  fileName = scanner.nextLine();
+
+                SearchResult searchResult = search(fileName);
+                System.out.println(searchResult.toJson());
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -78,25 +85,7 @@ public class Main {
         Random random = new Random();
         int numberOfFilesToPick = random.nextInt(3, files.size());
 
-        return pickRandomFiles(files,numberOfFilesToPick);
-    }
-
-    public static List<String> pickRandomFiles(List<String> array, int numberOfElements) {
-        List<String> pickedElements = new ArrayList<>();
-        Random random = new Random();
-
-        int maxIndex = Math.min(numberOfElements, array.size());
-
-        while (pickedElements.size() < maxIndex) {
-            int randomIndex = random.nextInt(array.size());
-            String randomElement = array.get(randomIndex);
-
-            if (!pickedElements.contains(randomElement)) {
-                pickedElements.add(randomElement);
-            }
-        }
-
-        return pickedElements;
+        return Helper.pickRandomFiles(files,numberOfFilesToPick);
     }
 
     public static String registerNodeInBS(Node node) {
@@ -108,6 +97,7 @@ public class Main {
 
             InetAddress destinationAddress = InetAddress.getByName(ipAddress);
 
+            // Send BS server to incoming port details
             String regCommand = "REG " + node.getIp() + " " + node.getPort() + " "+ node.getNodeId();
             regCommand = regCommand.length() + " " + regCommand;
 
@@ -117,11 +107,16 @@ public class Main {
             CommunicationModule.sendCommand(regCommand, destinationAddress, port);
 
             // get BS server response
-            DatagramPacket incomming = CommunicationModule.receiveCommand();
-            return CommunicationModule.getDataFromIncomingPacket(incomming);
+            DatagramPacket incoming = CommunicationModule.waitForReply();
+            return CommunicationModule.getDataFromIncomingPacket(incoming);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public static SearchResult search(String file) {
+        SearchQuery searchQuery = new SearchQuery(file, 0);
+        return Helper.searchFile(searchQuery);
     }
 }

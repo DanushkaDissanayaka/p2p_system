@@ -1,5 +1,7 @@
 package org.p2p;
 
+import com.google.gson.Gson;
+
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.Objects;
@@ -20,12 +22,12 @@ public class ClientListener implements Runnable {
         String request;
         String length;
         String command = null;
-        String file = null;
+        String query = null;
         DatagramPacket incoming = null;
         try {
             while (true) {
                 // listen for incoming request
-                incoming = CommunicationModule.receiveCommand();
+                incoming = CommunicationModule.receiveIncomingCommand();
 
                 if (incoming != null) {
                     request = CommunicationModule.getDataFromIncomingPacket(incoming);
@@ -35,7 +37,7 @@ public class ClientListener implements Runnable {
                     if (st.countTokens() == 3) {
                         length = st.nextToken();
                         command = st.nextToken();
-                        file = st.nextToken();
+                        query = st.nextToken();
                     } else if (st.countTokens() == 2) {
                         length = st.nextToken();
                         command = st.nextToken();
@@ -46,9 +48,18 @@ public class ClientListener implements Runnable {
                      */
                     if (Objects.equals(command, "FIND")) {
 
-                        boolean found = systemNode.searchInStorage(file);
-                        // if not found from this node we will request file form Neighbour nodes
-                        String response = found ? "FOUND" : "NTFOUND";
+                        SearchQuery searchQuery = Helper.fromJson(query, SearchQuery.class);
+
+                        // increment current search depth by one
+                        searchQuery.setCurrentSearchDepth(searchQuery.getCurrentSearchDepth() + 1);
+
+                        // search in local storage
+                        SearchResult searchResult = systemNode.searchInStorage(searchQuery);
+
+                        // if not found file in this node and search depth is below threshold we will request file form Neighbour nodes
+                        Helper.searchFile(searchQuery);
+
+                        String response = searchResult.toJson();
 
                         System.out.println(response);
                         // send response to client

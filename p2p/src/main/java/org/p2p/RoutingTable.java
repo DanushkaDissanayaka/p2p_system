@@ -55,7 +55,7 @@ public class RoutingTable {
        List<Node> listUpdatedNeighbours = new ArrayList<>();
        neighbours.forEach (node -> {
            try {
-               CommunicationModule.setSocketTimeout(1000);
+               CommunicationModule.setOutgoingSocketTimeout(1000);
 
                // send ping command to node
                String command = "7&%PING";
@@ -63,7 +63,7 @@ public class RoutingTable {
                CommunicationModule.sendCommand(command, destinationAddress, node.getPort());
 
                // wait for pong command
-               DatagramPacket incoming = CommunicationModule.receiveCommand();
+               DatagramPacket incoming = CommunicationModule.waitForReply();
 
                // remove node form neighbours if we dos not get the pong response
                if(incoming != null) {
@@ -76,7 +76,7 @@ public class RoutingTable {
                e.printStackTrace();
            }
        });
-       CommunicationModule.setSocketTimeout(0);
+       CommunicationModule.setOutgoingSocketTimeout(0);
        neighbours = listUpdatedNeighbours;
        return listUpdatedNeighbours;
    }
