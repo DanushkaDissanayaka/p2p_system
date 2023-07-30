@@ -73,7 +73,7 @@ public class RoutingTable {
                    }
                }
            } catch (IOException e) {
-               e.printStackTrace();
+               SystemLogger.info(e.getMessage());
            }
        });
        CommunicationModule.setOutgoingSocketTimeout(0);
@@ -81,6 +81,43 @@ public class RoutingTable {
        return listUpdatedNeighbours;
    }
     public static List<Node> getNeighbours() {
-        return neighbours;
+        return new ArrayList<>(neighbours);
+    }
+
+    public static void syncRouteTable() {
+       try {
+           // prepare command
+           String command = "SYNC "+ Main.systemNode.getIp() + " " + Main.systemNode.getPort() + " " + Main.systemNode.getNodeId();
+           command = String.format("%04d", command.length() + 5) + " " + command;
+
+           SystemLogger.info(command);
+
+           // set timeout
+           CommunicationModule.setOutgoingSocketTimeout(1000);
+           // send command to bootstrap server
+           InetAddress destinationAddress = InetAddress.getByName(Main.BS_IPADDRESS);
+           CommunicationModule.sendCommand(command, destinationAddress, Main.BS_PORT);
+
+           // wait for replay
+           DatagramPacket reply = CommunicationModule.waitForReply();
+           String data = CommunicationModule.getDataFromIncomingPacket(reply);
+
+           List<Node> list = new ArrayList<>();
+
+           if (data != null) {
+               StringTokenizer st = new StringTokenizer(data, " ");
+               int nodeNo = parseInt( st.nextToken());
+
+               for (int i = 0; i < nodeNo; i++) {
+                   String ip = st.nextToken();
+                   String port = st.nextToken();
+                   list.add(new Node(ip, parseInt(port)));
+               }
+               neighbours = list;
+           }
+       } catch (Exception e) {
+           SystemLogger.info(e.getMessage());
+       }
+        CommunicationModule.setOutgoingSocketTimeout(0);
     }
 }

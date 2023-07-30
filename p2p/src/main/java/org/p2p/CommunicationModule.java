@@ -13,7 +13,7 @@ public class CommunicationModule {
         try {
             socket = new DatagramSocket(systemNode.getPort());
         } catch (Exception e) {
-            e.printStackTrace();
+            SystemLogger.info(e.getMessage());
         }
     }
 
@@ -21,7 +21,7 @@ public class CommunicationModule {
         try {
             socketOutgoing = new DatagramSocket(systemNode.getOutgoingPort());
         } catch (Exception e) {
-            e.printStackTrace();
+            SystemLogger.info(e.getMessage());
         }
     }
 
@@ -37,7 +37,7 @@ public class CommunicationModule {
             socket.receive(incoming);
             return incoming;
         } catch (Exception e) {
-            e.printStackTrace();
+            SystemLogger.info(e.getMessage());
         }
         return null;
     }
@@ -53,7 +53,7 @@ public class CommunicationModule {
             socketOutgoing.receive(reply);
             return reply;
         } catch (Exception e) {
-            e.printStackTrace();
+            SystemLogger.info(e.getMessage());
         }
         return null;
     }
@@ -66,12 +66,12 @@ public class CommunicationModule {
      */
     public static void sendCommand(String command, InetAddress address, int port) {
         try {
-            System.out.println(command);
+            SystemLogger.info(command);
             // send response to client
             DatagramPacket dpReply = new DatagramPacket(command.getBytes() , command.getBytes().length , address, port);
             socketOutgoing.send(dpReply);
         } catch (Exception e) {
-            e.printStackTrace();
+            SystemLogger.info(e.getMessage());
         }
     }
 
@@ -87,7 +87,7 @@ public class CommunicationModule {
         try {
             socket.setSoTimeout(timeout);
         } catch (Exception e) {
-            e.printStackTrace();
+            SystemLogger.info(e.getMessage());
         }
     }
 
@@ -95,7 +95,7 @@ public class CommunicationModule {
         try {
             socketOutgoing.setSoTimeout(timeout);
         } catch (Exception e) {
-            e.printStackTrace();
+            SystemLogger.info(e.getMessage());
         }
     }
 }

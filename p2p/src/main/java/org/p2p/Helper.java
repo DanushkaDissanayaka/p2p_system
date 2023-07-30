@@ -9,6 +9,7 @@ import java.net.DatagramPacket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Logger;
 
 public class Helper {
     private static final int SEARCH_DEPTH = 3;
@@ -44,7 +45,7 @@ public class Helper {
                         break;
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    SystemLogger.info(e.getMessage());
                 }
             };
         }

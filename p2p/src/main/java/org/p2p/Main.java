@@ -11,12 +11,22 @@ import java.util.*;
 public class Main {
 
     static Node systemNode;
+
+    // BS ip address
+    public static final String BS_IPADDRESS = "127.0.0.1";
+
+    //BS port
+    public static final int BS_PORT = 55555;
+
     public static void main(String[] args) {
 
         try {
             // create system node
             List<String> storage = getStorage();
             systemNode = new Node(storage);
+
+            // Init system logger
+            SystemLogger.createLogger(systemNode);
 
             // Create socket
             CommunicationModule.createSocket(systemNode);
@@ -31,19 +41,37 @@ public class Main {
             }
 
             // validate BS server response and create routing table
-            System.out.println(response);
+            SystemLogger.info(response);
+
             RoutingTable.createRoutingTable(response);
 
             // refresh routing table
             List<Node> nodes = RoutingTable.refreshRoutingTable(systemNode);
 
-            System.out.println(nodes);
+            // Update route table periodically
+            Thread th2 = new Thread( ()-> {
+                while (true) {
+                    try {
+                        // Sync routing table with bootstrap server
+                        RoutingTable.syncRouteTable();
+
+                        // refresh routing table
+                        RoutingTable.refreshRoutingTable(systemNode);
+
+                        // update every 60S
+                        Thread.sleep(60000);
+                    } catch (Exception e) {
+                        SystemLogger.info(e.getMessage());
+                    }
+                }
+            });
+            th2.start();
 
             //create new thread and if someone ask file from the server lest send the reply
             Thread th1 = new Thread(new ClientListener(systemNode), "Client Listener");
             th1.start();
 
-            System.out.println(systemNode.getNodeJsonObject());
+            SystemLogger.info(systemNode.getNodeJsonObject());
 
             while (true) {
                 // wait for user input and if user request file start search
@@ -52,11 +80,22 @@ public class Main {
                 String  fileName = scanner.nextLine();
 
                 SearchResult searchResult = search(fileName);
-                System.out.println(searchResult.toJson());
+                if (searchResult.isResultFound()) {
+                    System.out.println("\u001B[32m Search result found for file : " + fileName);
+                    System.out.println("Node Ip : " + searchResult.getNodeIp()
+                            + "\n Node Port: " + searchResult.getNodePort()
+                            + "\n Search Depth: " + searchResult.getCurrentSearchDepth()
+                            + " \u001B[0m"
+                    );
+                } else {
+                    System.out.println("\u001B[31m No Search result found for file : " + fileName
+                            + "Search depth : " + searchResult.getCurrentSearchDepth()
+                            + " \u001B[0m");
+                }
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            SystemLogger.info(e.getMessage());
         }
     }
 
@@ -79,7 +118,7 @@ public class Main {
                     files.add(line);
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                SystemLogger.info(e.getMessage());
             }
         }
         Random random = new Random();
@@ -90,27 +129,23 @@ public class Main {
 
     public static String registerNodeInBS(Node node) {
         try {
-            // BS ip address
-            String ipAddress = "127.0.0.1";
-            //BS port
-            int port = 55555;
 
-            InetAddress destinationAddress = InetAddress.getByName(ipAddress);
+            InetAddress destinationAddress = InetAddress.getByName(BS_IPADDRESS);
 
             // Send BS server to incoming port details
             String regCommand = "REG " + node.getIp() + " " + node.getPort() + " "+ node.getNodeId();
             regCommand = regCommand.length() + " " + regCommand;
 
-            System.out.println(regCommand);
+            SystemLogger.info(regCommand);
 
             // Send registration command to server
-            CommunicationModule.sendCommand(regCommand, destinationAddress, port);
+            CommunicationModule.sendCommand(regCommand, destinationAddress, BS_PORT);
 
             // get BS server response
             DatagramPacket incoming = CommunicationModule.waitForReply();
             return CommunicationModule.getDataFromIncomingPacket(incoming);
         } catch (Exception e) {
-            e.printStackTrace();
+            SystemLogger.info(e.getMessage());
             return null;
         }
     }

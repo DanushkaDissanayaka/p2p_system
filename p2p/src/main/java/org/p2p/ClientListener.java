@@ -18,7 +18,7 @@ public class ClientListener implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("Start listning");
+        SystemLogger.info("Start listning");
         String request;
         String length;
         String command = null;
@@ -32,7 +32,7 @@ public class ClientListener implements Runnable {
                 if (incoming != null) {
                     request = CommunicationModule.getDataFromIncomingPacket(incoming);
                     StringTokenizer st = new StringTokenizer(request, "&%");
-                    System.out.println(request);
+                    SystemLogger.info(request);
 
                     if (st.countTokens() == 3) {
                         length = st.nextToken();
@@ -61,7 +61,7 @@ public class ClientListener implements Runnable {
 
                         String response = searchResult.toJson();
 
-                        System.out.println(response);
+                        SystemLogger.info(response);
                         // send response to client
                         CommunicationModule.sendCommand(response, incoming.getAddress() , incoming.getPort());
                     } else if (Objects.equals(command, "PING")) {
@@ -76,7 +76,7 @@ public class ClientListener implements Runnable {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            SystemLogger.info(e.getMessage());
         }
     }
 }

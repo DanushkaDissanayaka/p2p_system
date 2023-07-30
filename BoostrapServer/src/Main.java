@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -101,6 +102,31 @@ public class Main {
                     String reply = "0012 ECHOK 0";
                     DatagramPacket dpReply = new DatagramPacket(reply.getBytes() , reply.getBytes().length , incoming.getAddress() , incoming.getPort());
                     sock.send(dpReply);
+                } else if (command.equals("SYNC")) {
+                    // send 3 random nodes except request node
+                    List<Neighbour> neighboursCopy = new ArrayList<>(nodes);
+
+                    String ip = st.nextToken();
+                    int port = Integer.parseInt(st.nextToken());
+                    String username = st.nextToken();
+
+                    // remove sync requested node
+                    boolean isExist = false;
+                    for (int i=0; i<neighboursCopy.size(); i++) {
+                        if (nodes.get(i).getPort() == port) {
+                            isExist = true;
+                            neighboursCopy.remove(i);
+                        }
+                    }
+                    if (!isExist) {
+                        // this node not exist in bootstrap server add it to the list
+                        nodes.add(new Neighbour(ip, port, username));
+                    }
+
+                    // prepare response data
+                    String response = getRandomNodes(neighboursCopy);
+                    DatagramPacket dpReply = new DatagramPacket(response.getBytes() , response.getBytes().length , incoming.getAddress() , incoming.getPort());
+                    sock.send(dpReply);
                 }
 
             }
@@ -112,5 +138,27 @@ public class Main {
     public static void echo(String msg)
     {
         System.out.println(msg);
+    }
+
+    public static String getRandomNodes(List<Neighbour> nodes) {
+        String reply = "0 ";
+        if (nodes.size() == 1) {
+            reply = "1 " + nodes.get(0).getIp() + " " + nodes.get(0).getPort();
+        } else if (nodes.size() == 2) {
+            reply = "2 " + nodes.get(0).getIp() + " " + nodes.get(0).getPort() + " " + nodes.get(1).getIp() + " " + nodes.get(1).getPort();
+        } else if (nodes.size() > 2){
+            Random r = new Random();
+            int Low = 0;
+            int High = nodes.size();
+            int random_1 = r.nextInt(High-Low) + Low;
+            int random_2 = r.nextInt(High-Low) + Low;
+            while (random_1 == random_2) {
+                random_2 = r.nextInt(High-Low) + Low;
+            }
+            echo (random_1 + " " + random_2);
+            reply = "2 " + nodes.get(random_1).getIp() + " " + nodes.get(random_1).getPort() + " " + nodes.get(random_2).getIp() + " " + nodes.get(random_2).getPort();
+        }
+
+        return reply;
     }
 }
