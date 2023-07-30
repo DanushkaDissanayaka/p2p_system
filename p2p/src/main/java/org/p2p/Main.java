@@ -18,15 +18,34 @@ public class Main {
             List<String> storage = getStorage();
             systemNode = new Node(storage);
 
+            // Create socket
+            CommunicationModule.createSocket(systemNode);
+
             // lets register our node in boostrap server
             String response = registerNodeInBS(systemNode);
 
-            // validate BS server response
-            System.out.println(response);
+            // If BS server response not found throw error
+            if (response == null) {
+                throw new Exception("BS Server error");
+            }
 
-            // create new thread and if someone ask file from as send reply
+            // validate BS server response and create routing table
+            System.out.println(response);
+            RoutingTable.createRoutingTable(response);
+
+            // refresh routing table
+            List<Node> nodes = RoutingTable.refreshRoutingTable(systemNode);
+
+            System.out.println(nodes);
+
+            //create new thread and if someone ask file from the server lest send the reply
+            Thread th1 = new Thread(new ClientListener(systemNode), "Client Listener");
+            th1.start();
 
             // wait for user input and if user request file start search
+            Scanner scanner = new Scanner(System.in);
+            System.out.print("Enter File Name To Search: ");
+            String  fileName = scanner.nextLine();
 
             System.out.println(systemNode.getNodeJsonObject());
         } catch (Exception e) {
@@ -82,8 +101,6 @@ public class Main {
 
     public static String registerNodeInBS(Node node) {
         try {
-            DatagramSocket socket = new DatagramSocket(55554);
-
             // BS ip address
             String ipAddress = "127.0.0.1";
             //BS port
@@ -91,28 +108,17 @@ public class Main {
 
             InetAddress destinationAddress = InetAddress.getByName(ipAddress);
 
-            List<String> commands = List.of("REG", "UNREG", "ECHO", "EXIT");
-
-            String s;
-
             String regCommand = "REG " + node.getIp() + " " + node.getPort() + " "+ node.getNodeId();
             regCommand = regCommand.length() + " " + regCommand;
 
             System.out.println(regCommand);
 
             // Send registration command to server
-            byte[] sendData = regCommand.getBytes();
-            DatagramPacket packet = new DatagramPacket(sendData, sendData.length, destinationAddress, port);
-            socket.send(packet);
+            CommunicationModule.sendCommand(regCommand, destinationAddress, port);
 
             // get BS server response
-            byte[] buffer = new byte[65536];
-            DatagramPacket incoming = new DatagramPacket(buffer, buffer.length);
-            socket.receive(incoming);
-            byte[] data = incoming.getData();
-            socket.close();
-
-            return new String(data, 0, incoming.getLength());
+            DatagramPacket incomming = CommunicationModule.receiveCommand();
+            return CommunicationModule.getDataFromIncomingPacket(incomming);
         } catch (Exception e) {
             e.printStackTrace();
             return null;

@@ -2,9 +2,10 @@ package org.p2p;
 
 import com.google.gson.Gson;
 
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
+import javax.xml.crypto.Data;
+import java.net.DatagramSocket;
+import java.net.SocketException;
+import java.util.*;
 
 // Sample Node class for representing nodes in the network
 class Node {
@@ -32,6 +33,15 @@ class Node {
 
         // setup storage
         this.storage = storage;
+
+    }
+
+    public Node(String ip, int port) {
+        this.ip = ip;
+        this.port = port;
+
+        this.storage = new ArrayList<>();
+        this.nodeId = UUID.randomUUID().toString();
     }
     public String getIp() {
         return ip;
@@ -52,7 +62,7 @@ class Node {
         Gson gson = new Gson();
         return gson.toJson(this);
     }
-    public boolean SearchInStorage (String file) {
+    public boolean searchInStorage (String file) {
         return this.storage.contains(file);
     }
 }
