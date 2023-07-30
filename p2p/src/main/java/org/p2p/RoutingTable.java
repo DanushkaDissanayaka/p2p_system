@@ -86,6 +86,12 @@ public class RoutingTable {
 
     public static void syncRouteTable() {
        try {
+
+           // no need update if there is two neighbour nodes available
+           if (neighbours.size() == 2) {
+               return;
+           }
+
            // prepare command
            String command = "SYNC "+ Main.systemNode.getIp() + " " + Main.systemNode.getPort() + " " + Main.systemNode.getNodeId();
            command = String.format("%04d", command.length() + 5) + " " + command;

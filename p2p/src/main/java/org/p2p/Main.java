@@ -8,6 +8,8 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.*;
 
+import static java.lang.Integer.parseInt;
+
 public class Main {
 
     static Node systemNode;
@@ -20,9 +22,67 @@ public class Main {
 
     public static void main(String[] args) {
 
+        // create list of nodes to start process
+        List<Node> startNodes = new ArrayList<Node>();
+
+        startNodes.add(
+                new Node(BS_IPADDRESS,
+                        55556,
+                        55557,
+                        Arrays.asList(
+                                "Adventures of Tintin",
+                                "Jack and Jill",
+                                "Glee",
+                                "The Vampire Diarie",
+                                "King Arthur",
+                                "Windows XP")
+                )
+        );
+
+        startNodes.add(
+                new Node(BS_IPADDRESS,
+                        55558,
+                        55559,
+                        Arrays.asList(
+                                "Harry Potter",
+                                "Kung Fu Panda",
+                                "Lady Gaga",
+                                "Twilight",
+                                "Windows 8",
+                                "Mission Impossible"
+                        )
+                )
+        );
+
+        startNodes.add(
+                new Node(BS_IPADDRESS,
+                        55560,
+                        55561,
+                        Arrays.asList(
+                                "Turn Up The Music",
+                                "Super Mario",
+                                "American Pickers",
+                                "Microsoft Office 2010",
+                                "Happy Feet",
+                                "Modern Family",
+                                "American Idol",
+                                "Hacking for Dummies")
+                )
+        );
+
+
         try {
+            Scanner scanner = new Scanner(System.in);
+//            System.out.print("Enter Node id: ");
+//            int  index = parseInt(scanner.nextLine());
+//
+//            if (index > 3 || index < 0) {
+//                throw new Exception("Only 3 nodes Allowed if you want more nodes add to the program");
+//            }
+
             // create system node
             List<String> storage = getStorage();
+//            systemNode = startNodes.get(index);
             systemNode = new Node(storage);
 
             // Init system logger
@@ -56,7 +116,7 @@ public class Main {
                         RoutingTable.syncRouteTable();
 
                         // refresh routing table
-                        RoutingTable.refreshRoutingTable(systemNode);
+                        //RoutingTable.refreshRoutingTable(systemNode);
 
                         // update every 60S
                         Thread.sleep(60000);
@@ -75,7 +135,6 @@ public class Main {
 
             while (true) {
                 // wait for user input and if user request file start search
-                Scanner scanner = new Scanner(System.in);
                 System.out.print("Enter File Name To Search: ");
                 String  fileName = scanner.nextLine();
 
@@ -122,7 +181,7 @@ public class Main {
             }
         }
         Random random = new Random();
-        int numberOfFilesToPick = random.nextInt(3, files.size());
+        int numberOfFilesToPick = random.nextInt(0,  (int)(files.size()/2));
 
         return Helper.pickRandomFiles(files,numberOfFilesToPick);
     }

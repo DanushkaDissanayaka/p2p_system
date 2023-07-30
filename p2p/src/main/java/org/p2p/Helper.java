@@ -23,6 +23,8 @@ public class Helper {
         // search local storage
         SearchResult searchResult = Main.systemNode.searchInStorage(searchQuery);
 
+        searchQuery.setSearchedNode(new Node(Main.systemNode.getIp(), Main.systemNode.getPort()));
+
         if (searchResult.isResultFound()) {
             return searchResult;
         }
@@ -30,10 +32,20 @@ public class Helper {
         // search in neighbours if local storage not found and search depth not reached
         if (searchQuery.getCurrentSearchDepth() <= SEARCH_DEPTH) {
             String query = searchQuery.getSearchQuery();
+
+            SystemLogger.info(query);
+
             // find in each neighbours
             for(int i=0; i < RoutingTable.getNeighbours().size(); i++)
             {
                 Node node = RoutingTable.getNeighbours().get(i);
+
+                // if we had already searched in this node ignore
+                if (searchQuery.isQuerySearchInNode(node)) {
+                    continue;
+                }
+
+                // else try to find file
                 try {
                     CommunicationModule.setOutgoingSocketTimeout(10000);
                     CommunicationModule.sendCommand(query, node.getAddress(), node.getPort());

@@ -2,9 +2,31 @@ package org.p2p;
 
 import com.google.gson.Gson;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class SearchQuery {
     private String filename;
     private int currentSearchDepth;
+
+    List<Node> searchedNodes = new ArrayList<>();
+
+    public List<Node> getSearchedNodes() {
+        return searchedNodes;
+    }
+
+    public void setSearchedNode(Node node) {
+        this.searchedNodes.add(node);
+    }
+
+    public boolean isQuerySearchInNode(Node node) {
+        for(Node n : searchedNodes) {
+            if(n.getIp().equals(node.getIp()) && n.getPort() == node.getPort()) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public String getFilename() {
         return filename;
